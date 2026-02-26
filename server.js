@@ -6,11 +6,11 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-let requestCount = 0;
+let currentRequests = 0;
+let lastRPS = 0;
 
-// Middleware der tæller alle hits
 app.use((req, res, next) => {
-    requestCount++;
+    currentRequests++;
     next();
 });
 
@@ -18,14 +18,14 @@ app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
-// Nulstil tælleren og send data hvert sekund
+// Beregn Requests Per Second (RPS) hvert sekund
 setInterval(() => {
-    io.emit('update_load', requestCount);
-    // Vi sænker tælleren gradvist for at simulere server-recovery, 
-    // eller du kan nulstille den helt med requestCount = 0;
-    requestCount = Math.max(0, requestCount - 5); 
+    lastRPS = currentRequests;
+    currentRequests = 0; // Nulstil til næste måling
+    io.emit('update_load', lastRPS);
 }, 1000);
 
-server.listen(3000, () => {
-    console.log('Server kører på http://localhost:3000');
+server.listen(3000, '0.0.0.0', () => {
+    console.log('Server kører på port 3000');
+    console.log('Vis monitor på: http://localhost:3000');
 });
